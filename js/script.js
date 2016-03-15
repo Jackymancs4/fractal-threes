@@ -1,3 +1,192 @@
+var TwoScene = function() {
+	
+	this.div = document.getElementById( 'container' );
+	this.$message = $('.message');
+	this.$canvas = $('canvas');
+	this.canvas = this.$canvas.get(0);
+	this.ratio = window.devicePixelRatio >= 1 ? window.devicePixelRatio : 1;
+	this.context = this.canvas.getContext( '2d' );
+	
+  this.curves=[];
+  
+	this.maxChildNodes = 3;
+	this.childLength = 0.9;
+	this.baseTheta = Math.PI * (80 / 180);
+	this.nodeLevels = 7;
+	this.lineWidth = 8 * this.ratio;
+	
+	
+	//this.addStats();
+	this.addEventListeners();
+	this.hue = Math.random() * 360;
+	
+	//Disable scroll on old iOS devices
+	$(document).on('touchmove', false);
+	
+  this.$hud = $('.hud');
+	this.$hud.on('click', this.onClick.bind(this) );
+    
+    
+	this.resizeCanvas();
+	//this.loop();
+	//this.reset();
+	
+	//this.onNewCurve=_.bind( this.onNewCurve, this);
+	//_.bindAll( this, 'onNewCurve' );
+  //this.onNewCurve.bind(this);
+  
+	this.drawCurve = new DrawCurve( 50, this.canvas, this.context, this.onNewCurve.bind(this))
+};
+		
+TwoScene.prototype = {
+	
+	addStats : function() {
+		this.stats = new Stats();
+		this.stats.domElement.style.position = 'absolute';
+		this.stats.domElement.style.top = '0px';
+		$("#container").append( this.stats.domElement );
+	},
+	
+	addEventListeners : function() {
+		$(window).on('resize', this.resizeCanvas.bind(this));
+	},
+	
+	resizeCanvas : function(e) {
+		this.canvas.width = $(window).width() * this.ratio - 20;
+		this.canvas.height = $(window).height() * this.ratio - 20;
+		this.width = this.canvas.width;
+		this.height = this.canvas.height;
+		this.left = this.$canvas.offset().left;
+		this.top = this.$canvas.offset().top;
+
+	},
+	
+	rgbToFillStyle : function(r, g, b, a) {
+		if(a === undefined) {
+			return ["rgb(",r,",",g,",",b,")"].join('');
+		} else {
+			return ["rgba(",r,",",g,",",b,",",a,")"].join('');
+		}
+	},
+	
+	hslToFillStyle : function(h, s, l, a) {
+		if(a === undefined) {
+			return ["hsl(",h,",",s,"%,",l,"%)"].join('');
+		} else {
+			return ["hsla(",h,",",s,"%,",l,"%,",a,")"].join('');
+		}
+	},
+	
+	reset : function() {
+		//this.context.fillStyle = this.rgbToFillStyle(255, 255, 255);
+		//this.context.fillRect(0,0,this.width, this.height);
+		
+		this.context.fillStyle = this.rgbToFillStyle(10, 10, 10, 1);
+		this.context.fillRect(0,0,this.width, this.height);
+		
+		this.maxChildNodes = Math.round( this.random(2, 4) );
+		this.childLength = this.random(0.9, 0.99);
+		this.baseTheta = Math.PI * (90 / 180) * this.random(0.5, 1);
+		this.nodeLevels = Math.round( 9 * this.random(0.7, 1) );
+		this.lineWidth = 20 * this.random(0.3, 1) * this.ratio;
+		this.hue += 30;
+		
+	},
+	
+	random : function(min, max) {
+	  return Math.random() * (max - min) + min;
+	},
+	
+	generateLine : function( prevLineNode, prevLevel, totalLevels ) {
+		
+		var i;
+		var lineNode = new LineNode();
+		var currentLevel = prevLevel - 1;
+		var ratioTop = (totalLevels - currentLevel) / totalLevels;
+		var ratioBottom = currentLevel / totalLevels;
+		var randomness = 2 * (Math.random() - 0.5);
+		var thetaChange = this.baseTheta * randomness;
+		var theta = prevLineNode.theta - thetaChange; //Theta is the previous angle, minus base theta
+		var hyp = prevLineNode.distance * this.childLength;
+		var numberOfChildNodes = Math.round(this.maxChildNodes * this.random(0.5, 1));
+		
+		lineNode.beg.copy(prevLineNode.end);
+		lineNode.end.x = prevLineNode.end.x + ( hyp ) * Math.cos( theta );
+		lineNode.end.y = prevLineNode.end.y + ( hyp ) * Math.sin( theta );
+		
+		lineNode.update();
+		
+		prevLineNode.children.push( lineNode );
+		
+		//debugger;
+		
+		if(currentLevel > 0) {
+			for(i=0; i < numberOfChildNodes; i++) {
+				this.generateLine( lineNode, currentLevel, totalLevels );
+			}
+		}
+		
+	},
+	
+  onClick : function () {
+		var i, lineNode, curve;
+  	this.reset();
+
+    for(var j=0; j<this.curves.length; j++) {
+      curve = this.curves[j];
+  		for(i=1; i < curve.line.length; i++) {
+  			
+  			this.hue += 10;
+  			this.hue %= 360;
+  			this.lineWidth *= 0.92;
+  			
+  			lineNode = new LineNode();
+  		
+  			lineNode.beg.copy( curve.line[i-1] );
+  			lineNode.end.copy( curve.line[i] );
+  			//lineNode.end.lerp( lineNode.beg, 0.5 );
+  			
+  			lineNode.update();
+  			this.generateLine( lineNode, this.nodeLevels, this.nodeLevels );
+  		
+  			this.context.strokeStyle = this.hslToFillStyle(180, 50, 50);
+  			this.context.lineCap = "round";
+  			this.drawTree( lineNode, this.nodeLevels, this.nodeLevels );
+  		}
+		}
+		
+	},
+
+  
+	onNewCurve : function( curve ) {
+    this.curves.push(curve);		
+	},
+	
+	drawTree : function( lineNode, prevLevel, totalLevels ) {
+		
+		var ratio = prevLevel / totalLevels;
+		var ratio2 = ( (ratio * ratio) + ratio ) / 2;
+		
+		this.context.lineWidth = ratio2 * this.lineWidth;
+		
+		this.context.beginPath();
+		this.context.moveTo( lineNode.beg.x, lineNode.beg.y );
+		this.context.lineTo( lineNode.end.x, lineNode.end.y );
+		this.context.strokeStyle = this.hslToFillStyle(
+			this.hue - 90 * ratio,
+			30 * (ratio2) + 20 + 10,
+			(30 * (ratio) + 30) * this.random(0.8, 1),
+			0.9
+		);
+		this.context.stroke();
+		this.context.closePath();
+		
+	   	for(var i=0; i < lineNode.children.length; i++) {
+	   		this.drawTree( lineNode.children[i], prevLevel - 1, totalLevels );
+	   	}
+	},
+		
+};
 
 var LineNode = function() {
 	this.beg = new THREE.Vector2();
@@ -19,33 +208,13 @@ LineNode.prototype = {
 	}
 };
 
-var DrawCurve = function() {
-
-	this.div = document.getElementById( 'container' );
-	this.$message = $('.message');
-	this.$canvas = $('canvas');
-	this.canvas = this.$canvas.get(0);
-	this.ratio = window.devicePixelRatio >= 1 ? window.devicePixelRatio : 1;
-	this.context = this.canvas.getContext( '2d' );
+var DrawCurve = function( smoothness, canvas, context, callback ) {
 	
-	this.maxChildNodes = 3;
-	this.childLength = 0.9;
-	this.baseTheta = Math.PI * (80 / 180);
-	this.nodeLevels = 7;
-	this.lineWidth = 8 * this.ratio;
-	
-	
-	//this.addStats();
-	this.addEventListeners();
-	
-	//Disable scroll on old iOS devices
-	$(document).on('touchmove', false);
-	
-	
-	this.resizeCanvas();
-	
-	this.smoothness = 50;
-	this.callback = false;
+	this.smoothness = smoothness;
+	this.canvas = canvas;
+	this.context = context;
+	this.callback = callback;
+	this.$canvas = $(canvas);
 	this.$message = $('.message');
 	this.$drawingTarget = $('.drawing-target');
 	this.points = undefined;
@@ -54,7 +223,7 @@ var DrawCurve = function() {
 	this.distance = 0;
 	this.targetPointDistance = 50;
 	
-	this.doDrawCurve = true;
+	this.doDrawCurve = false;
 	this.doDrawTrail = true;
 	this.ratio = window.devicePixelRatio >= 1 ? window.devicePixelRatio : 1;
 	
@@ -65,36 +234,6 @@ var DrawCurve = function() {
 };
 
 DrawCurve.prototype = {
-	
-	addEventListeners : function() {
-		$(window).on('resize', this.resizeCanvas.bind(this));
-	},
-	
-	resizeCanvas : function(e) {
-		this.canvas.width = $(window).width() * this.ratio;
-		this.canvas.height = $(window).height() * this.ratio;
-		this.width = this.canvas.width;
-		this.height = this.canvas.height;
-		this.left = this.$canvas.offset().left;
-		this.top = this.$canvas.offset().top;
-		
-	},	
-	
-	rgbToFillStyle : function(r, g, b, a) {
-		if(a === undefined) {
-			return ["rgb(",r,",",g,",",b,")"].join('');
-		} else {
-			return ["rgba(",r,",",g,",",b,",",a,")"].join('');
-		}
-	},
-	
-	hslToFillStyle : function(h, s, l, a) {
-		if(a === undefined) {
-			return ["hsl(",h,",",s,"%,",l,"%)"].join('');
-		} else {
-			return ["hsla(",h,",",s,"%,",l,"%,",a,")"].join('');
-		}
-	},
 	
 	onTouchStart : function(e) {
 		e.preventDefault();
@@ -187,13 +326,9 @@ DrawCurve.prototype = {
 			this.drawCurve( curve );
 		}
 		
-		var test =  JSON.stringify(curve);
-		var el = document.getElementById("json-text");
-		el.innerHTML = test;
-		
-		//if(typeof this.callback === 'function') {
-		//	this.callback( curve );
-		//}
+		if(typeof this.callback === 'function') {
+			this.callback( curve );
+		}
 		
 	},
 	
@@ -292,7 +427,7 @@ DrawCurve.prototype = {
 		var ctx = this.context;
 		
 		ctx.lineWidth = 15 * this.ratio;
-		ctx.strokeStyle = this.hslToFillStyle(180, 50, 80, 1);
+		ctx.strokeStyle = TwoScene.prototype.hslToFillStyle(180, 50, 80, 1);
 		ctx.beginPath();
 		ctx.lineCap = "round";
 		ctx.moveTo(prev.x,prev.y);
@@ -405,7 +540,7 @@ BezierCurveFromLine.prototype = {
 	drawCurve : function( ctx ) {
 		
 		ctx.lineWidth = 3;
-		ctx.strokeStyle = DrawCurve.prototype.hslToFillStyle(0, 50, 50, 0.5);
+		ctx.strokeStyle = TwoScene.prototype.hslToFillStyle(0, 50, 50, 0.5);
 		ctx.beginPath();
 		ctx.lineCap = "round";
 		
@@ -427,7 +562,7 @@ BezierCurveFromLine.prototype = {
 			ctx.beginPath();
 			ctx.moveTo( this.cpLeft[i].x, this.cpLeft[i].y );
 			ctx.lineTo( this.cpRight[i].x, this.cpRight[i].y );
-			ctx.strokeStyle = DrawCurve.prototype.hslToFillStyle(135, 100, 25, 0.4);
+			ctx.strokeStyle = TwoScene.prototype.hslToFillStyle(135, 100, 25, 0.4);
 			ctx.stroke();
 			ctx.closePath();
 
@@ -436,13 +571,13 @@ BezierCurveFromLine.prototype = {
 			
 			ctx.beginPath();
 			ctx.arc( this.cpLeft[i].x, this.cpLeft[i].y, 5, 0, 2 * Math.PI );
-			ctx.fillStyle = DrawCurve.prototype.hslToFillStyle(90, 50, 50, 0.3);
+			ctx.fillStyle = TwoScene.prototype.hslToFillStyle(90, 50, 50, 0.3);
 			ctx.fill();
 			ctx.closePath();
 			
 			ctx.beginPath();
 			ctx.arc( this.cpRight[i].x, this.cpRight[i].y, 5, 0, 2 * Math.PI );
-			ctx.fillStyle = DrawCurve.prototype.hslToFillStyle(180, 50, 50, 0.3);
+			ctx.fillStyle = TwoScene.prototype.hslToFillStyle(180, 50, 50, 0.3);
 			ctx.fill();
 			ctx.closePath();
 			
@@ -455,7 +590,7 @@ BezierCurveFromLine.prototype = {
 		
 		ctx.lineWidth = 1;
 		ctx.beginPath();
-		ctx.strokeStyle = DrawCurve.prototype.hslToFillStyle(0, 0, 0, 0.3);
+		ctx.strokeStyle = TwoScene.prototype.hslToFillStyle(0, 0, 0, 0.3);
 		for(i=1; i < line.length; i++) {
 			prev = line[i-1];
 			curr = line[i];
@@ -471,5 +606,5 @@ BezierCurveFromLine.prototype = {
 var twoScene;
 
 $(function() {
-	twoScene = new DrawCurve();
+	twoScene = new TwoScene();
 });

@@ -8,6 +8,7 @@ var TwoScene = function() {
 	this.context = this.canvas.getContext( '2d' );
 	
   this.curves=[];
+  this.profile=[];
   
 	this.maxChildNodes = 3;
 	this.childLength = 0.9;
@@ -25,12 +26,6 @@ var TwoScene = function() {
 	    
   this.hud();  
 	this.resizeCanvas();
-	//this.loop();
-	//this.reset();
-	
-	//this.onNewCurve=_.bind( this.onNewCurve, this);
-	//_.bindAll( this, 'onNewCurve' );
-  //this.onNewCurve.bind(this);
   
 	this.drawCurve = new DrawCurve( 50, this.canvas, this.context, this.onNewCurve.bind(this))
 };
@@ -75,19 +70,43 @@ TwoScene.prototype = {
 	},
 	
   hud : function() {
-    this.$huddraw = $('#draw');
-	  this.$huddraw.on('click', this.onClickDraw.bind(this) );  
+    this.$huddraw1 = $('#draw1');
+	  this.$huddraw1.on('click', this.onClickDraw1.bind(this) );  
 
+    this.$huddraw2 = $('#draw2');
+	  this.$huddraw2.on('click', this.onClickDraw2.bind(this) ); 
+
+    this.$huddraw3 = $('#draw3');
+	  this.$huddraw3.on('click', this.onClickDraw3.bind(this) ); 
+    
+    this.$huddraw4 = $('#draw4');
+	  this.$huddraw4.on('click', this.onClickDraw4.bind(this) ); 
+    
     this.$hudclear = $('#clear');
 	  this.$hudclear.on('click', this.onClickClear.bind(this) );
   },
   
-	reset : function() {
-		//this.context.fillStyle = this.rgbToFillStyle(255, 255, 255);
-		//this.context.fillRect(0,0,this.width, this.height);
-		
-		this.context.fillStyle = this.rgbToFillStyle(10, 10, 10, 1);
+  cleanAll : function () {
+    
+    this.context.fillStyle = this.rgbToFillStyle(10, 10, 10, 1);
 		this.context.fillRect(0,0,this.width, this.height);
+  
+  },
+  
+  saveProfile : function() {
+    this.profile = {maxChildNodes:this.maxChildNodes, childLength:this.childLength, baseTheta:this.baseTheta, nodeLevels:this.nodeLevels , lineWidth:this.lineWidth ,hue:this.hue};
+  },
+  
+  loadProfile : function () {
+		this.maxChildNodes = this.profile.maxChildNodes;
+		this.childLength = this.profile.childLength;
+		this.baseTheta = this.profile.baseTheta;
+		this.nodeLevels = this.profile.nodeLevels;
+		this.lineWidth = this.profile.lineWidth;
+		this.hue = this.profile.hue;
+  },
+  
+	reset : function() {
 		
 		this.maxChildNodes = Math.round( this.random(2, 4) );
 		this.childLength = this.random(0.9, 0.99);
@@ -96,6 +115,7 @@ TwoScene.prototype = {
 		this.lineWidth = 20 * this.random(0.3, 1) * this.ratio;
 		this.hue += 30;
 		
+    this.saveProfile();
 	},
 	
 	random : function(min, max) {
@@ -134,40 +154,79 @@ TwoScene.prototype = {
 	},
 	
   onClickClear : function () {
-    //this.curves=0;
+
     this.curves=[];
-  	this.reset();
+  	this.cleanAll();
+  	//this.reset();
   },
   
-  onClickDraw : function () {
+  onClickDraw1 : function () {
 		var i, lineNode, curve;
-  	this.reset();
+  	this.cleanAll();
+    this.reset();
 
     for(var j=0; j<this.curves.length; j++) {
-      curve = this.curves[j];
-  		for(i=1; i < curve.line.length; i++) {
-  			
-  			this.hue += 10;
-  			this.hue %= 360;
-  			this.lineWidth *= 0.92;
-  			
-  			lineNode = new LineNode();
-  		
-  			lineNode.beg.copy( curve.line[i-1] );
-  			lineNode.end.copy( curve.line[i] );
-  			//lineNode.end.lerp( lineNode.beg, 0.5 );
-  			
-  			lineNode.update();
-  			this.generateLine( lineNode, this.nodeLevels, this.nodeLevels );
-  		
-  			this.context.strokeStyle = this.hslToFillStyle(180, 50, 50);
-  			this.context.lineCap = "round";
-  			this.drawTree( lineNode, this.nodeLevels, this.nodeLevels );
-  		}
+      this.draw(this.curves[j]);
+		}
+		
+	},
+  
+  onClickDraw2 : function () {
+		var i, lineNode, curve;
+    this.cleanAll();
+    
+    for(var j=0; j<this.curves.length; j++) {
+  	  this.reset();      
+      this.draw(this.curves[j]);
 		}
 		
 	},
 
+  onClickDraw3 : function () {
+		var i, lineNode, curve;
+  	this.cleanAll();
+    this.reset();
+
+    for(var j=0; j<this.curves.length; j++) {
+      this.loadProfile();
+      this.draw(this.curves[j]);
+		}
+		
+	},
+  
+  onClickDraw4 : function () {
+		var i, lineNode, curve;
+  	this.cleanAll();
+    //this.reset();
+
+    for(var j=0; j<this.curves.length; j++) {
+      this.loadProfile();
+      this.draw(this.curves[j]);
+		}
+		
+	},
+
+  draw : function (curve) {
+  	for(i=1; i < curve.line.length; i++) {
+  			
+  		this.hue += 10;
+  		this.hue %= 360;
+  		this.lineWidth *= 0.92;
+  			
+  		lineNode = new LineNode();
+  		
+  		lineNode.beg.copy( curve.line[i-1] );
+  		lineNode.end.copy( curve.line[i] );
+  		//lineNode.end.lerp( lineNode.beg, 0.5 );
+  			
+  		lineNode.update();
+  		this.generateLine( lineNode, this.nodeLevels, this.nodeLevels );
+  		
+  		this.context.strokeStyle = this.hslToFillStyle(180, 50, 50);
+  		this.context.lineCap = "round";
+  		this.drawTree( lineNode, this.nodeLevels, this.nodeLevels );
+  	}
+  },
   
 	onNewCurve : function( curve ) {
     this.curves.push(curve);		

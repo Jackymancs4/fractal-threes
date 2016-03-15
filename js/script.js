@@ -26,19 +26,12 @@ var TwoScene = function() {
 	//this.loop();
 	//this.reset();
 	
-	_.bindAll( this, 'onNewCurve' );
+	//_.bindAll( this, 'onNewCurve' );
 	
-	this.drawCurve = new DrawCurve( 50, this.canvas, this.context, this.onNewCurve )
+	this.drawCurve = new DrawCurve( 50, this.canvas, this.context)
 };
 		
 TwoScene.prototype = {
-	
-	addStats : function() {
-		this.stats = new Stats();
-		this.stats.domElement.style.position = 'absolute';
-		this.stats.domElement.style.top = '0px';
-		$("#container").append( this.stats.domElement );
-	},
 	
 	addEventListeners : function() {
 		$(window).on('resize', this.resizeCanvas.bind(this));
@@ -52,157 +45,15 @@ TwoScene.prototype = {
 		this.left = this.$canvas.offset().left;
 		this.top = this.$canvas.offset().top;
 		
-		this.draw();
-	},
-			
-	loop : function() {
-
-		//requestAnimationFrame( this.loop.bind(this) );
-		this.draw();
-
-	},
-	
-	rgbToFillStyle : function(r, g, b, a) {
-		if(a === undefined) {
-			return ["rgb(",r,",",g,",",b,")"].join('');
-		} else {
-			return ["rgba(",r,",",g,",",b,",",a,")"].join('');
-		}
-	},
-	
-	hslToFillStyle : function(h, s, l, a) {
-		if(a === undefined) {
-			return ["hsl(",h,",",s,"%,",l,"%)"].join('');
-		} else {
-			return ["hsla(",h,",",s,"%,",l,"%,",a,")"].join('');
-		}
-	},
-	
-	reset : function() {
-		//this.context.fillStyle = this.rgbToFillStyle(255, 255, 255);
-		//this.context.fillRect(0,0,this.width, this.height);
-		
-		this.context.fillStyle = this.rgbToFillStyle(10, 10, 10, 1);
-		this.context.fillRect(0,0,this.width, this.height);
-		
-		this.maxChildNodes = Math.round( this.random(2, 4) );
-		this.childLength = this.random(0.9, 0.99);
-		this.baseTheta = Math.PI * (90 / 180) * this.random(0.5, 1);
-		this.nodeLevels = Math.round( 9 * this.random(0.7, 1) );
-		this.lineWidth = 20 * this.random(0.3, 1) * this.ratio;
-		this.hue += 30;
-		
 	},
 	
 	random : function(min, max) {
 	  return Math.random() * (max - min) + min;
-	},
-	
-	generateLine : function( prevLineNode, prevLevel, totalLevels ) {
-		
-		var i;
-		var lineNode = new LineNode();
-		var currentLevel = prevLevel - 1;
-		var ratioTop = (totalLevels - currentLevel) / totalLevels;
-		var ratioBottom = currentLevel / totalLevels;
-		var randomness = 2 * (Math.random() - 0.5);
-		var thetaChange = this.baseTheta * randomness;
-		var theta = prevLineNode.theta - thetaChange; //Theta is the previous angle, minus base theta
-		var hyp = prevLineNode.distance * this.childLength;
-		var numberOfChildNodes = Math.round(this.maxChildNodes * this.random(0.5, 1));
-		
-		lineNode.beg.copy(prevLineNode.end);
-		lineNode.end.x = prevLineNode.end.x + ( hyp ) * Math.cos( theta );
-		lineNode.end.y = prevLineNode.end.y + ( hyp ) * Math.sin( theta );
-		
-		lineNode.update();
-		
-		prevLineNode.children.push( lineNode );
-		
-		//debugger;
-		
-		if(currentLevel > 0) {
-			for(i=0; i < numberOfChildNodes; i++) {
-				this.generateLine( lineNode, currentLevel, totalLevels );
-			}
-		}
-		
-	},
-	
-	onNewCurve : function( curve ) {
-		var i, lineNode;
-
-
-		this.reset();
-		for(i=1; i < curve.line.length; i++) {
-			
-			this.hue += 10;
-			this.hue %= 360;
-			this.lineWidth *= 0.92;
-			
-			lineNode = new LineNode();
-		
-			lineNode.beg.copy( curve.line[i-1] );
-			lineNode.end.copy( curve.line[i] );
-			//lineNode.end.lerp( lineNode.beg, 0.5 );
-			
-			lineNode.update();
-			this.generateLine( lineNode, this.nodeLevels, this.nodeLevels );
-		
-			this.context.strokeStyle = this.hslToFillStyle(180, 50, 50);
-			this.context.lineCap = "round";
-			this.drawTree( lineNode, this.nodeLevels, this.nodeLevels );
-		}
-		
-		
-	},
-	
-	drawTree : function( lineNode, prevLevel, totalLevels ) {
-		
-		var ratio = prevLevel / totalLevels;
-		var ratio2 = ( (ratio * ratio) + ratio ) / 2;
-		
-		this.context.lineWidth = ratio2 * this.lineWidth;
-		
-		this.context.beginPath();
-		this.context.moveTo( lineNode.beg.x, lineNode.beg.y );
-		this.context.lineTo( lineNode.end.x, lineNode.end.y );
-		this.context.strokeStyle = this.hslToFillStyle(
-			this.hue - 90 * ratio,
-			30 * (ratio2) + 20 + 10,
-			(30 * (ratio) + 30) * this.random(0.8, 1),
-			0.9
-		);
-		this.context.stroke();
-		this.context.closePath();
-		
-	   	for(var i=0; i < lineNode.children.length; i++) {
-	   		this.drawTree( lineNode.children[i], prevLevel - 1, totalLevels );
-	   	}
-	},
-	
-	draw : function() {
-		//this.stats.update();
-		/*
-		this.context.fillStyle = this.rgbToFillStyle(255, 255, 255, 0.2);
-		this.context.fillRect(0,0,this.width, this.height);
-		
-		var lineNode = new LineNode();
-		
-		lineNode.beg.x = 0;
-		lineNode.beg.y = this.height / 2;
-		lineNode.end.x = this.width / 10;
-		lineNode.end.y = this.height / 2;
-		lineNode.update();
-		
-		this.generateLine( lineNode, this.nodeLevels, this.nodeLevels );
-		
-		this.context.strokeStyle = this.hslToFillStyle(180, 50, 50);
-		this.context.lineCap = "round";
-		
-		this.drawTree( lineNode, this.nodeLevels, this.nodeLevels );
-		*/
 	}
+		
+
+	
+
 	
 };
 
@@ -226,12 +77,12 @@ LineNode.prototype = {
 	}
 };
 
-var DrawCurve = function( smoothness, canvas, context, callback ) {
+var DrawCurve = function( smoothness, canvas, context ) {
 	
 	this.smoothness = smoothness;
 	this.canvas = canvas;
 	this.context = context;
-	this.callback = callback;
+	this.callback = false;
 	this.$canvas = $(canvas);
 	this.$message = $('.message');
 	this.$drawingTarget = $('.drawing-target');
@@ -445,7 +296,7 @@ DrawCurve.prototype = {
 		var ctx = this.context;
 		
 		ctx.lineWidth = 15 * this.ratio;
-		ctx.strokeStyle = TwoScene.prototype.hslToFillStyle(180, 50, 80, 1);
+		//ctx.strokeStyle = TwoScene.prototype.hslToFillStyle(180, 50, 80, 1);
 		ctx.beginPath();
 		ctx.lineCap = "round";
 		ctx.moveTo(prev.x,prev.y);

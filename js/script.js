@@ -7,8 +7,11 @@ var TwoScene = function() {
 	this.ratio = window.devicePixelRatio >= 1 ? window.devicePixelRatio : 1;
 	this.context = this.canvas.getContext( '2d' );
 	
+	this.ratio=1;
+
   this.curves=[];
   this.profile=[];
+  this.trash=false;
   
 	this.maxChildNodes = 3;
 	this.childLength = 0.9;
@@ -82,6 +85,15 @@ TwoScene.prototype = {
     this.$huddraw4 = $('#draw4');
 	  this.$huddraw4.on('click', this.onClickDraw4.bind(this) ); 
     
+    this.$hudundo = $('#undo');
+	  this.$hudundo.on('click', this.onClickUndo.bind(this) );
+
+    this.$hudredo = $('#redo');
+	  this.$hudredo.on('click', this.onClickRedo.bind(this) );
+
+    this.$hudreverse = $('#reverse');
+	  this.$hudreverse.on('click', this.onClickReverse.bind(this) );
+
     this.$hudclear = $('#clear');
 	  this.$hudclear.on('click', this.onClickClear.bind(this) );
   },
@@ -206,8 +218,27 @@ TwoScene.prototype = {
 		
 	},
 
+  onClickUndo : function () {
+    this.trash=this.curves.pop();
+		this.onNewCurve(this.curves.pop());
+	},
+
+  onClickRedo : function () {
+    if(this.trash!=false) {
+      this.curves.push(this.trash);
+		  this.onNewCurve(this.curves.pop());
+      this.trash=false;
+    }
+	},
+  
+  onClickReverse : function () {
+
+      this.curves[this.curves.length-1].reverseCurve();
+    
+	},
+
   draw : function (curve) {
-  	for(i=1; i < curve.line.length; i++) {
+  	for(var i=1; i < curve.line.length; i++) {
   			
   		this.hue += 10;
   		this.hue %= 360;
@@ -229,7 +260,14 @@ TwoScene.prototype = {
   },
   
 	onNewCurve : function( curve ) {
-    this.curves.push(curve);		
+    this.curves.push(curve);
+    
+    this.cleanAll();
+    
+  	for(var i=0; i < this.curves.length; i++) {
+      this.curves[i].drawCurve(this.context, this.ratio);
+      //this.context
+    }	
 	},
 	
 	drawTree : function( lineNode, prevLevel, totalLevels ) {
@@ -296,7 +334,9 @@ var DrawCurve = function( smoothness, canvas, context, callback ) {
 	this.doDrawCurve = false;
 	this.doDrawTrail = true;
 	this.ratio = window.devicePixelRatio >= 1 ? window.devicePixelRatio : 1;
-	
+	this.ratio=1;
+
+
 	this.$drawingTarget.on('mousedown', this.onMouseDown.bind(this) );
 	this.$drawingTarget.on('touchmove', this.onTouchMove.bind(this) );
 	this.$drawingTarget.on('touchstart', this.onTouchStart.bind(this) );
@@ -526,6 +566,14 @@ var BezierCurveFromLine = function(line, smoothness) {
 
 BezierCurveFromLine.prototype = {
 	
+  reverseCurve : function () {
+    this.line.reverse();
+    var temp=this.cpRight.reverse();
+    
+    this.cpRight=this.cpLeft.reverse();
+    this.cpLeft=temp;
+  },
+  
 	generate : function( line, smoothness ) {
 		
 		var i, il,
@@ -596,7 +644,7 @@ BezierCurveFromLine.prototype = {
 
 		var i, il = this.line.length;
 		
-		ctx.moveTo(line[0].x, line[0].y);
+		ctx.moveTo(this.line[0].x, this.line[0].y);
 	
 		for(i=1; i < il; i++) {
 			ctx.bezierCurveTo(
@@ -607,11 +655,15 @@ BezierCurveFromLine.prototype = {
 		}
 	},
 	
-	drawCurve : function( ctx ) {
+	drawCurve : function( ctx , ratio ) {
 		
-		ctx.lineWidth = 3;
-		ctx.strokeStyle = TwoScene.prototype.hslToFillStyle(0, 50, 50, 0.5);
-		ctx.beginPath();
+		//ctx.lineWidth = 3;
+		//ctx.strokeStyle = TwoScene.prototype.hslToFillStyle(0, 50, 50, 0.5);
+
+		ctx.lineWidth = 15 * ratio;
+		ctx.strokeStyle = TwoScene.prototype.hslToFillStyle(180, 50, 80, 1);		
+    
+    ctx.beginPath();
 		ctx.lineCap = "round";
 		
 		this.createBezierPath( ctx );

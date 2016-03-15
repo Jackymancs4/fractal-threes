@@ -1,0 +1,46 @@
+body {
+	background-color: #0a0a0a;
+}
+canvas {}
+
+h1 {
+	font-size: 3.1em;
+}
+.drawing-target {
+	position:absolute;
+	top:0;
+	left:50px;
+	width:95%;
+	height:100%;
+	z-index:2;
+}
+.info {
+	z-index:3;
+}
+.message {
+	z-index:1;
+}
+#json-text {
+	position: absolute;
+  height: 100%;
+  width: 300px;
+  background: #ddd;
+  top: 10px; 
+  
+}
+#hud {
+	position: absolute;
+  height: auto;
+  width: 30px;
+  background: #ddd;
+  top: 10px;
+  padding-bottom: 10px; 
+  
+}
+
+.hud-button {
+  height: 24px;
+  width: 24px;
+  background: #aaa;
+  margin:3px;
+}

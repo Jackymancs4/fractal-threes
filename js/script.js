@@ -22,11 +22,8 @@ var TwoScene = function() {
 	
 	//Disable scroll on old iOS devices
 	$(document).on('touchmove', false);
-	
-  this.$hud = $('.hud');
-	this.$hud.on('click', this.onClick.bind(this) );
-    
-    
+	    
+  this.hud();  
 	this.resizeCanvas();
 	//this.loop();
 	//this.reset();
@@ -77,6 +74,14 @@ TwoScene.prototype = {
 		}
 	},
 	
+  hud : function() {
+    this.$huddraw = $('#draw');
+	  this.$huddraw.on('click', this.onClickDraw.bind(this) );  
+
+    this.$hudclear = $('#clear');
+	  this.$hudclear.on('click', this.onClickClear.bind(this) );
+  },
+  
 	reset : function() {
 		//this.context.fillStyle = this.rgbToFillStyle(255, 255, 255);
 		//this.context.fillRect(0,0,this.width, this.height);
@@ -128,7 +133,13 @@ TwoScene.prototype = {
 		
 	},
 	
-  onClick : function () {
+  onClickClear : function () {
+    //this.curves=0;
+    this.curves=[];
+  	this.reset();
+  },
+  
+  onClickDraw : function () {
 		var i, lineNode, curve;
   	this.reset();
 

@@ -1,61 +1,3 @@
-var TwoScene = function() {
-	
-	this.div = document.getElementById( 'container' );
-	this.$message = $('.message');
-	this.$canvas = $('canvas');
-	this.canvas = this.$canvas.get(0);
-	this.ratio = window.devicePixelRatio >= 1 ? window.devicePixelRatio : 1;
-	this.context = this.canvas.getContext( '2d' );
-	
-	this.maxChildNodes = 3;
-	this.childLength = 0.9;
-	this.baseTheta = Math.PI * (80 / 180);
-	this.nodeLevels = 7;
-	this.lineWidth = 8 * this.ratio;
-	
-	
-	//this.addStats();
-	this.addEventListeners();
-	this.hue = Math.random() * 360;
-	
-	//Disable scroll on old iOS devices
-	$(document).on('touchmove', false);
-	
-	
-	this.resizeCanvas();
-	//this.loop();
-	//this.reset();
-	
-	//_.bindAll( this, 'onNewCurve' );
-	
-	this.drawCurve = new DrawCurve( 50, this.canvas, this.context)
-};
-		
-TwoScene.prototype = {
-	
-	addEventListeners : function() {
-		$(window).on('resize', this.resizeCanvas.bind(this));
-	},
-	
-	resizeCanvas : function(e) {
-		this.canvas.width = $(window).width() * this.ratio;
-		this.canvas.height = $(window).height() * this.ratio;
-		this.width = this.canvas.width;
-		this.height = this.canvas.height;
-		this.left = this.$canvas.offset().left;
-		this.top = this.$canvas.offset().top;
-		
-	},
-	
-	random : function(min, max) {
-	  return Math.random() * (max - min) + min;
-	}
-		
-
-	
-
-	
-};
 
 var LineNode = function() {
 	this.beg = new THREE.Vector2();
@@ -77,13 +19,33 @@ LineNode.prototype = {
 	}
 };
 
-var DrawCurve = function( smoothness, canvas, context ) {
+var DrawCurve = function() {
+
+	this.div = document.getElementById( 'container' );
+	this.$message = $('.message');
+	this.$canvas = $('canvas');
+	this.canvas = this.$canvas.get(0);
+	this.ratio = window.devicePixelRatio >= 1 ? window.devicePixelRatio : 1;
+	this.context = this.canvas.getContext( '2d' );
 	
-	this.smoothness = smoothness;
-	this.canvas = canvas;
-	this.context = context;
+	this.maxChildNodes = 3;
+	this.childLength = 0.9;
+	this.baseTheta = Math.PI * (80 / 180);
+	this.nodeLevels = 7;
+	this.lineWidth = 8 * this.ratio;
+	
+	
+	//this.addStats();
+	this.addEventListeners();
+	
+	//Disable scroll on old iOS devices
+	$(document).on('touchmove', false);
+	
+	
+	this.resizeCanvas();
+	
+	this.smoothness = 50;
 	this.callback = false;
-	this.$canvas = $(canvas);
 	this.$message = $('.message');
 	this.$drawingTarget = $('.drawing-target');
 	this.points = undefined;
@@ -92,7 +54,7 @@ var DrawCurve = function( smoothness, canvas, context ) {
 	this.distance = 0;
 	this.targetPointDistance = 50;
 	
-	this.doDrawCurve = false;
+	this.doDrawCurve = true;
 	this.doDrawTrail = true;
 	this.ratio = window.devicePixelRatio >= 1 ? window.devicePixelRatio : 1;
 	
@@ -103,6 +65,36 @@ var DrawCurve = function( smoothness, canvas, context ) {
 };
 
 DrawCurve.prototype = {
+	
+	addEventListeners : function() {
+		$(window).on('resize', this.resizeCanvas.bind(this));
+	},
+	
+	resizeCanvas : function(e) {
+		this.canvas.width = $(window).width() * this.ratio;
+		this.canvas.height = $(window).height() * this.ratio;
+		this.width = this.canvas.width;
+		this.height = this.canvas.height;
+		this.left = this.$canvas.offset().left;
+		this.top = this.$canvas.offset().top;
+		
+	},	
+	
+	rgbToFillStyle : function(r, g, b, a) {
+		if(a === undefined) {
+			return ["rgb(",r,",",g,",",b,")"].join('');
+		} else {
+			return ["rgba(",r,",",g,",",b,",",a,")"].join('');
+		}
+	},
+	
+	hslToFillStyle : function(h, s, l, a) {
+		if(a === undefined) {
+			return ["hsl(",h,",",s,"%,",l,"%)"].join('');
+		} else {
+			return ["hsla(",h,",",s,"%,",l,"%,",a,")"].join('');
+		}
+	},
 	
 	onTouchStart : function(e) {
 		e.preventDefault();
@@ -195,9 +187,13 @@ DrawCurve.prototype = {
 			this.drawCurve( curve );
 		}
 		
-		if(typeof this.callback === 'function') {
-			this.callback( curve );
-		}
+		var test =  JSON.stringify(curve);
+		var el = document.getElementById("json-text");
+		el.innerHTML = test;
+		
+		//if(typeof this.callback === 'function') {
+		//	this.callback( curve );
+		//}
 		
 	},
 	
@@ -296,7 +292,7 @@ DrawCurve.prototype = {
 		var ctx = this.context;
 		
 		ctx.lineWidth = 15 * this.ratio;
-		//ctx.strokeStyle = TwoScene.prototype.hslToFillStyle(180, 50, 80, 1);
+		ctx.strokeStyle = this.hslToFillStyle(180, 50, 80, 1);
 		ctx.beginPath();
 		ctx.lineCap = "round";
 		ctx.moveTo(prev.x,prev.y);
@@ -409,7 +405,7 @@ BezierCurveFromLine.prototype = {
 	drawCurve : function( ctx ) {
 		
 		ctx.lineWidth = 3;
-		ctx.strokeStyle = TwoScene.prototype.hslToFillStyle(0, 50, 50, 0.5);
+		ctx.strokeStyle = DrawCurve.prototype.hslToFillStyle(0, 50, 50, 0.5);
 		ctx.beginPath();
 		ctx.lineCap = "round";
 		
@@ -431,7 +427,7 @@ BezierCurveFromLine.prototype = {
 			ctx.beginPath();
 			ctx.moveTo( this.cpLeft[i].x, this.cpLeft[i].y );
 			ctx.lineTo( this.cpRight[i].x, this.cpRight[i].y );
-			ctx.strokeStyle = TwoScene.prototype.hslToFillStyle(135, 100, 25, 0.4);
+			ctx.strokeStyle = DrawCurve.prototype.hslToFillStyle(135, 100, 25, 0.4);
 			ctx.stroke();
 			ctx.closePath();
 
@@ -440,13 +436,13 @@ BezierCurveFromLine.prototype = {
 			
 			ctx.beginPath();
 			ctx.arc( this.cpLeft[i].x, this.cpLeft[i].y, 5, 0, 2 * Math.PI );
-			ctx.fillStyle = TwoScene.prototype.hslToFillStyle(90, 50, 50, 0.3);
+			ctx.fillStyle = DrawCurve.prototype.hslToFillStyle(90, 50, 50, 0.3);
 			ctx.fill();
 			ctx.closePath();
 			
 			ctx.beginPath();
 			ctx.arc( this.cpRight[i].x, this.cpRight[i].y, 5, 0, 2 * Math.PI );
-			ctx.fillStyle = TwoScene.prototype.hslToFillStyle(180, 50, 50, 0.3);
+			ctx.fillStyle = DrawCurve.prototype.hslToFillStyle(180, 50, 50, 0.3);
 			ctx.fill();
 			ctx.closePath();
 			
@@ -459,7 +455,7 @@ BezierCurveFromLine.prototype = {
 		
 		ctx.lineWidth = 1;
 		ctx.beginPath();
-		ctx.strokeStyle = TwoScene.prototype.hslToFillStyle(0, 0, 0, 0.3);
+		ctx.strokeStyle = DrawCurve.prototype.hslToFillStyle(0, 0, 0, 0.3);
 		for(i=1; i < line.length; i++) {
 			prev = line[i-1];
 			curr = line[i];
@@ -475,5 +471,5 @@ BezierCurveFromLine.prototype = {
 var twoScene;
 
 $(function() {
-	twoScene = new TwoScene();
+	twoScene = new DrawCurve();
 });

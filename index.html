@@ -1,47 +1,49 @@
-
 <!DOCTYPE html>
 <html>
-	<head>
-		<title>Recursion Poems - Draw a beautiful fractal tree</title>
 
-		<link href='css/style.css' rel='stylesheet' type='text/css' />
-		
-		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		
-		<script>
-			var THREE = {};
-			var PERLIN = {};
-		</script>
-		<script src="js/lib/jquery-2.1.1.min.js"></script>
-		<script src="js/lib/stats.min.js"></script>
-		<script src='js/lib/Vector2.js'></script>
-		<script src='js/lib/underscore-min.js'></script>
-		<script src='js/script.js'></script>
-	</head>
-	<body>
-		<div id='container'>
-			<canvas></canvas>
+<head>
+	<title>Recursion Poems - Draw a beautiful fractal tree</title>
 
-			<div class='drawing-target'></div>
-      <div id='hud'>
-        <div class='hud-button' id='draw1'>
-        </div>
-        <div class='hud-button' id='draw2'>      
-        </div>
-        <div class='hud-button' id='draw3'>      
-        </div>
-        <div class='hud-button' id='draw4'>      
-        </div>
-        <div class='hud-button' id='clear'>      
-        </div>
-        <div class='hud-button' id='reverse'>      
-        </div>
-        <div class='hud-button' id='undo'>      
-        </div>
-        <div class='hud-button' id='redo'>      
-        </div>
-      </div>        
+	<link href='css/style.css' rel='stylesheet' type='text/css' />
+
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+	<script>
+		var THREE = {};
+		var PERLIN = {};
+	</script>
+	<script src="js/lib/jquery-2.1.1.min.js"></script>
+	<script src="js/lib/stats.min.js"></script>
+	<script src='js/lib/Vector2.js'></script>
+	<script src='js/lib/underscore-min.js'></script>
+	<script src='js/script.js'></script>
+</head>
+
+<body>
+	<div id='container'>
+		<canvas></canvas>
+
+		<div class='drawing-target'></div>
+		<div id='hud'>
+			<div class='hud-button' id='draw1'>
+			</div>
+			<div class='hud-button' id='draw2'>
+			</div>
+			<div class='hud-button' id='draw3'>
+			</div>
+			<div class='hud-button' id='draw4'>
+			</div>
+			<div class='hud-button' id='clear'>
+			</div>
+			<div class='hud-button' id='reverse'>
+			</div>
+			<div class='hud-button' id='undo'>
+			</div>
+			<div class='hud-button' id='redo'>
+			</div>
 		</div>
-	</body>
+	</div>
+</body>
+
 </html>
